@@ -11,7 +11,7 @@ __copyright__ = 'Copyright 2021, PyMetasploit Project'
 __credits__ = []
 
 __license__ = 'GPL'
-__version__ = '2.0'
+__version__ = '2.1'
 __maintainer__ = 'Nadeem Douba'
 __email__ = 'ndouba@gmail.com'
 __status__ = 'Development'
@@ -208,7 +208,8 @@ class MsfRpcClient(object):
                 self.client = HTTPSConnection(self.server, self.port, context=ssl._create_unverified_context())
         else:
             self.client = HTTPConnection(self.server, self.port)
-        self.login(kwargs.get('username', 'msf'), password)
+        self.username = kwargs.get('credentials').get('username', 'msf')
+        self.login(self.username, password)
 
     def call(self, method, *args):
         """
@@ -228,7 +229,7 @@ class MsfRpcClient(object):
             self.client.request('POST', self.uri, packb(l), self._headers)
             r = self.client.getresponse()
             if r.status == 200:
-                return unpackb(r.read())
+                return unpackb(r.read(), raw=False)
             raise MsfRpcError('An unknown error has occurred while logging in.')
         elif self.authenticated:
             l.insert(1, self.sessionid)
@@ -311,9 +312,15 @@ class MsfRpcClient(object):
         """
         if self.sessionid is None:
             r = self.call(MsfRpcMethod.AuthLogin, username, password)
+            # in case r is actually encoded in bytes, this is a safe way to turn it back to string for the try/catch
+            str_data = {
+                key.decode() if isinstance(key, bytes) else key:
+                    val.decode() if isinstance(val, bytes) else val
+                for key, val in r.items()
+            }
             try:
-                if r['result'] == 'success':
-                    self.sessionid = r['token']
+                if str_data['result'] == 'success':
+                    self.sessionid = str_data['token']
             except KeyError:
                 raise MsfRpcError('Login failed.')
         else:
