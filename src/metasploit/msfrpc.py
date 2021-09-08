@@ -208,8 +208,7 @@ class MsfRpcClient(object):
                 self.client = HTTPSConnection(self.server, self.port, context=ssl._create_unverified_context())
         else:
             self.client = HTTPConnection(self.server, self.port)
-        self.username = kwargs.get('credentials').get('username', 'msf')
-        self.login(self.username, password)
+        self.login(kwargs.get('username', 'msf'), password)
 
     def call(self, method, *args):
         """
@@ -313,11 +312,18 @@ class MsfRpcClient(object):
         if self.sessionid is None:
             r = self.call(MsfRpcMethod.AuthLogin, username, password)
             # in case r is actually encoded in bytes, this is a safe way to turn it back to string for the try/catch
-            str_data = {
-                key.decode() if isinstance(key, bytes) else key:
-                    val.decode() if isinstance(val, bytes) else val
-                for key, val in r.items()
-            }
+            str_data = {}
+            for key, val in r.items():
+                if isinstance(key, bytes):
+                    key_temp = key.decode()
+                else:
+                    key_temp = key
+                if isinstance(val, bytes):
+                    val_temp = val.decode()
+                else:
+                    val_temp = val
+                str_data[key_temp] = val_temp
+
             try:
                 if str_data['result'] == 'success':
                     self.sessionid = str_data['token']
