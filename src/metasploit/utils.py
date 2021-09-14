@@ -30,3 +30,34 @@ def parseargs():
         p.print_help()
         exit(-1)
     return o
+
+
+def convert_bytes_to_string(bytes_dict):
+    str_data = {}
+    if isinstance(bytes_dict, dict):
+        for key, val in bytes_dict.items():
+            if isinstance(key, bytes):
+                key_temp = key.decode()
+            else:
+                key_temp = key
+            if isinstance(val, list) or isinstance(val, tuple):
+                val_temp = convert_val(val)
+            elif isinstance(val, dict):
+                val_temp = convert_bytes_to_string(val)
+            elif isinstance(val, bytes):
+                val_temp = val.decode()
+            else:
+                val_temp = val
+            str_data[key_temp] = val_temp
+    return str_data
+
+
+def convert_val(bytes_obj):
+    for index, item in enumerate(bytes_obj):
+        if isinstance(item, bytes):
+            bytes_obj[index] = item.decode('utf-8')
+        elif isinstance(item, dict):
+            item = convert_bytes_to_string(item)
+        elif isinstance(item, tuple) or isinstance(item, list):
+            convert_val(item)
+    return bytes_obj
