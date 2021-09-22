@@ -32,7 +32,7 @@ def parseargs():
     return o
 
 
-def convert_bytes_to_string(bytes_dict: dict):
+def convert_bytes_to_string(bytes_dict: dict) -> dict:
     """
     :param bytes_dict: dictionary, where inner objects are strings, bytes, or collections of those types
     :return: original dictionary with any bytes values converted to strings
