@@ -3,6 +3,7 @@
 from http.client import HTTPConnection, HTTPSConnection
 import ssl
 from numbers import Number
+from .utils import convert_bytes_to_string
 
 from msgpack import packb, unpackb
 
@@ -228,14 +229,16 @@ class MsfRpcClient(object):
             self.client.request('POST', self.uri, packb(l), self._headers)
             r = self.client.getresponse()
             if r.status == 200:
-                return unpackb(r.read(), raw=False)
+                byte = r.read()
+                return convert_bytes_to_string(unpackb(byte, raw=False))
             raise MsfRpcError('An unknown error has occurred while logging in.')
         elif self.authenticated:
             l.insert(1, self.sessionid)
             self.client.request('POST', self.uri, packb(l), self._headers)
             r = self.client.getresponse()
             if r.status == 200:
-                result = unpackb(r.read())
+                byte = r.read()
+                result = convert_bytes_to_string(unpackb(byte, raw=False))
                 if 'error' in result:
                     raise MsfRpcError(result['error_message'])
                 return result
@@ -312,21 +315,9 @@ class MsfRpcClient(object):
         if self.sessionid is None:
             r = self.call(MsfRpcMethod.AuthLogin, username, password)
             # in case r is actually encoded in bytes, this is a safe way to turn it back to string for the try/catch
-            str_data = {}
-            for key, val in r.items():
-                if isinstance(key, bytes):
-                    key_temp = key.decode()
-                else:
-                    key_temp = key
-                if isinstance(val, bytes):
-                    val_temp = val.decode()
-                else:
-                    val_temp = val
-                str_data[key_temp] = val_temp
-
             try:
-                if str_data['result'] == 'success':
-                    self.sessionid = str_data['token']
+                if r['result'] == 'success':
+                    self.sessionid = r['token']
             except KeyError:
                 raise MsfRpcError('Login failed.')
         else:
@@ -340,6 +331,12 @@ class MsfRpcClient(object):
         Logs the current user out. Note: do not call directly.
         """
         self.call(MsfRpcMethod.AuthLogout, self.sessionid)
+
+    def close(self):
+        """
+        Close the current http client connection for memory management purposes
+        """
+        self.client.close()
 
 
 class MsfTable(object):
