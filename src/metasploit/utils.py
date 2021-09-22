@@ -59,7 +59,7 @@ def convert_bytes_to_string(bytes_dict: dict) -> dict:
 def convert_val(bytes_obj: iter):
     """
     :param bytes_obj: some object containing either string or byte values, can be collection or just bytes
-    :return: object containing original strings and converted bytes to strings
+    :return: iterable object (tuple or list) containing original strings and converted bytes to strings
     """
     for index, item in enumerate(bytes_obj):
         if isinstance(item, bytes):
