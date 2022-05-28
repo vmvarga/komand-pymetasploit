@@ -1965,7 +1965,12 @@ class ConsoleManager(MsfManager):
         s = self.list
         if cid is None:
             return MsfConsole(self.rpc)
-        if cid not in s:
+        cidexists = False
+        for cons in s['consoles']:
+            if cid == cons['id']:
+                cidexists = True
+                break
+        if not cidexists:
             raise KeyError('Console ID (%s) does not exist' % cid)
         else:
             return MsfConsole(self.rpc, cid=cid)
