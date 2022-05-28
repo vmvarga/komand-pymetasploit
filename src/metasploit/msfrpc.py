@@ -1945,6 +1945,16 @@ class MsfConsole(object):
         """
         self.rpc.call(MsfRpcMethod.ConsoleDestroy, self.cid)
 
+    def is_busy(self):
+        """
+        Checks if the console is busy. We can't use .read() because that clears the data buffer.
+        We must do this by using .list instead.
+        """
+        cons = self.rpc.call(MsfRpcMethod.ConsoleList)['consoles']
+        for c in cons:
+            if c['id'] == self.cid:
+                return c['busy']
+
 
 class ConsoleManager(MsfManager):
 
@@ -1983,13 +1993,3 @@ class ConsoleManager(MsfManager):
         - cid : the console identifier.
         """
         self.rpc.call(MsfRpcMethod.ConsoleDestroy, cid)
-
-    def is_busy(self):
-        """
-        Checks if the console is busy. We can't use .read() because that clears the data buffer.
-        We must do this by using .list instead.
-        """
-        cons = self.rpc.call(MsfRpcMethod.ConsoleList)['consoles']
-        for c in cons:
-            if c['id'] == self.cid:
-                return c['busy']
